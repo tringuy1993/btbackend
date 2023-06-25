@@ -11,9 +11,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
-from sshtunnel import SSHTunnelForwarder
 import environ
 import os
+import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,25 +93,15 @@ WSGI_APPLICATION = 'btbackend.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 # # Connect to a server using the ssh keys. See the sshtunnel documentation for using password authentication
-ssh_tunnel = SSHTunnelForwarder(
-    env('IP_TUNNEL'),
-    ssh_username=env("SSH_USER"),
-    ssh_password=env("SSH_PASS"),
-    ssh_port=30,
-    remote_bind_address=('127.0.0.1', 5432)
-)
 
-ssh_tunnel.start()
-# print(ssh_tunnel.local_bind_port)
 DATABASES = {
     'default': {
         'ENGINE': "django.db.backends.postgresql",
-        'NAME': env("DB_NAME"),
-        'USER': env("DB_USER"),
-        'PASSWORD': env("DB_PASSWORD"),
-        'HOST': env("DB_HOST"),
-        'PORT': ssh_tunnel.local_bind_port,
-        'CONN_MAX_AGE': 35,
+        'NAME': env("DB_BT_NAME"),
+        'USER': env("DB_BT_USER"),
+        'PASSWORD': env("DB_BT_PWD"),
+        'HOST': env("DB_BT_HOST"),
+        'PORT': env("DB_BT_PORT"),
     }
 }
 
@@ -165,3 +155,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+FIREBASE_CONFIG = json.loads(env.str("FIREBASE_CONFIG"))

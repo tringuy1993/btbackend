@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .data_access.total_gex import get_notional_greeks_0dte, get_all_partioned_tables, get_theo_gamma
 from .data_access.utilities import generate_table_names
+from rest_framework.decorators import permission_classes
+from .authentication import IsAuthenticatedWithFirebase
 
 
 class hello(APIView):
@@ -18,6 +20,7 @@ class hello(APIView):
         return Response(response)
 
 
+@permission_classes([IsAuthenticatedWithFirebase])
 class zdte_dates(APIView):
     def get(self, request, *args, **kwargs):
         serializer = ZDTEDateSerializer(
@@ -25,11 +28,13 @@ class zdte_dates(APIView):
         return Response(serializer)
 
 
+@permission_classes([IsAuthenticatedWithFirebase])
 class get_table_partitions(APIView):
     def get(self, request, *args, **kwargs):
         return Response({'data': get_all_partioned_tables()})
 
 
+@permission_classes([IsAuthenticatedWithFirebase])
 class my_view(APIView):
     def get(self, request, *args, **kwargs):
         trade_date = request.query_params.get("trade_date").replace('-', '')

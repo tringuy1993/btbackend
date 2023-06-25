@@ -1,6 +1,8 @@
-avail_partitioned_tables = """SELECT inhrelid::regclass
+query_avail_partitioned_tables = """SELECT inhrelid::regclass
                         FROM pg_inherits
-                        WHERE inhparent = 'dev_spxw_data'::regclass;"""
+                        WHERE inhparent = 'spxw_data'::regclass
+                        ORDER BY inhrelid::regclass ASC;
+                        """
 
 zdte_dates = """
 CREATE TABLE zdte_dates AS
@@ -14,6 +16,11 @@ spot_price = """
     WHERE quote_datetime::time = %(trade_time)s
     ;
 """
+
+queries_theo_gamma = """
+    SELECT * FROM calc_theo_gamma(%(trade_date_time)s, %(expiration)s)
+"""
+
 
 queries_select = """
     SELECT 
@@ -49,8 +56,8 @@ queries_from = """
 """
 
 
-greeks = ['gamma', 'delta','vanna', 'theta', 'vega','rho']
-queries_greek_all=""
+greeks = ['gamma', 'delta', 'vanna', 'theta', 'vega', 'rho']
+queries_greek_all = ""
 for greek in greeks:
     if greek == 'vanna':
         query = f"""
@@ -66,7 +73,7 @@ for greek in greeks:
         ,ROUND(SUM(CASE WHEN option_type = true THEN calc_greek_notion_expo('{greek}', {greek}, oi, active_underlying_price, option_type) ELSE 0 END) + 
             SUM(CASE WHEN option_type = false THEN calc_greek_notion_expo('{greek}', {greek}, oi, active_underlying_price, option_type) ELSE 0 END)) AS total_{greek}_notion_expo
         """
-    queries_greek_all +=query
+    queries_greek_all += query
 
 queries = """
     SELECT 
@@ -93,10 +100,6 @@ queries = """
     GROUP BY strike
     ORDER BY strike ASC;
 """
-
-
-
-
 
 theo_gamma_mv = """
 DROP MATERIALIZED VIEW IF EXISTS theo_gamma_es;

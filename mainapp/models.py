@@ -34,10 +34,24 @@ class NotionalGreeks(models.Model):
     rho = models.FloatField()
     oi = models.IntegerField()
 
-
-
     class Meta:
         managed = False
         db_table = 'dev_spxw_data_p20210803'
+
+
+class PartitionedTable(models.Model):
+    table_name = models.TextField()
+    partition_name = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'spxw_data'
+
+    @classmethod
+    def get_partitions(cls):
+        """
+        Returns a list of all partitioned tables for spxw_data.
+        """
+        return cls.objects.filter(table_name='spxw_data', partition_name__startswith='spxw_data_p').all()
 
 

@@ -72,7 +72,6 @@ $$ LANGUAGE plpgsql
 """
 
 calc_gamma = """
-
 CREATE OR REPLACE FUNCTION gamma (quote_datetime TIMESTAMP, expiration DATE, strike NUMERIC, spot_price NUMERIC, implied_volatility NUMERIC) RETURNS NUMERIC
 AS $$
 DECLARE
@@ -115,8 +114,62 @@ $$ LANGUAGE plpgsql
 ;
 """
 
-
 calc_theo_gamma_exposure = """
+CREATE OR REPLACE FUNCTION calc_theo_gamma(p_quote_datetime timestamp, p_expiration date)
+    RETURNS TABLE (spot_price numeric, theo_gamma numeric)
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH spot_prices AS (
+        SELECT
+            ROUND(tpr.current_price * (0.7 + tser.i * 0.6 / 200), 1) AS spot_price
+        FROM
+            GENERATE_SERIES(1, 200, 1) AS tser(i)
+        CROSS JOIN (
+            SELECT
+                active_underlying_price AS current_price
+            FROM
+                spxw_data
+            WHERE
+                quote_datetime = p_quote_datetime
+            LIMIT 1
+        ) AS tpr
+    ),
+    subquery AS (
+        SELECT
+            strike,
+            gamma,
+            POWER(sp.spot_price, 2) * gamma(sd.quote_datetime, sd.expiration, sd.strike, sp.spot_price, sd.implied_volatility) *
+                CASE WHEN sd.option_type THEN 1 ELSE -1 END * sd.oi AS theo_gamma,
+            sp.spot_price
+        FROM
+            spxw_data AS sd
+        CROSS JOIN
+            spot_prices AS sp
+        WHERE
+            sd.quote_datetime = p_quote_datetime
+            AND sd.expiration <= p_expiration
+        ORDER BY
+            sd.strike
+    )
+    SELECT
+        subquery.spot_price,
+        SUM(subquery.theo_gamma) AS theo_gamma
+    FROM
+        subquery
+    GROUP BY
+        subquery.spot_price
+    ORDER BY
+        subquery.spot_price;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+"""
+
+# Old don't use.
+calc_theo_gamma_exposure_old = """
 CREATE OR REPLACE FUNCTION norm_pdf(z FLOAT4, mu FLOAT4 DEFAULT 0, sigma FLOAT4 DEFAULT 1)
 RETURNS FLOAT4 AS $$
 DECLARE
@@ -163,10 +216,11 @@ BEGIN
     
     spot_perc := 0.05 + (dte::FLOAT / 365) * 0.30;
     spot_qty := CEILING(100 + (dte::FLOAT / 365) * 100);
-    
+
     gamma_exposure := 0;
     
-    FOR i IN 1..spot_qty LOOP
+
+    FOR i IN 1..spot_qty LOOP 
         spot_price := ROUND((underlying_price * ((1-spot_perc) + i*2*spot_perc/spot_qty))::NUMERIC, 1);
         
         CONTINUE WHEN spot_price <= 0;

@@ -52,8 +52,10 @@ INSTALLED_APPS = [
     # 'psqlextra',
     'rest_framework',
 ]
-
+ALLOWED_HOSTS = ['www.alpha-seekers.com',
+                 'alpha-seekers.com', '127.0.0.1', 'localhost']
 CORS_ORIGIN_ALLOW_ALL = True
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -95,22 +97,22 @@ ssh_tunnel = SSHTunnelForwarder(
     env('IP_TUNNEL'),
     ssh_username=env("SSH_USER"),
     ssh_password=env("SSH_PASS"),
-    ssh_port = 30,
+    ssh_port=30,
     remote_bind_address=('127.0.0.1', 5432)
 )
 
 ssh_tunnel.start()
-# print(ssh_tunnel.local_bind_port) 
+# print(ssh_tunnel.local_bind_port)
 DATABASES = {
     'default': {
         'ENGINE': "django.db.backends.postgresql",
-        'NAME': 'trading',
-        'USER': 'postgres',
-        'PASSWORD': '12345',
-        'HOST': '127.0.0.1',
+        'NAME': env("DB_NAME"),
+        'USER': env("DB_USER"),
+        'PASSWORD': env("DB_PASSWORD"),
+        'HOST': env("DB_HOST"),
         'PORT': ssh_tunnel.local_bind_port,
-        'CONN_MAX_AGE': 15,
-        }
+        'CONN_MAX_AGE': 35,
+    }
 }
 
 # DATABASES ={

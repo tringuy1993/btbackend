@@ -115,16 +115,6 @@ DATABASES = {
     }
 }
 
-# DATABASES ={
-#             'default': {
-#             'ENGINE': 'django.db.backends.postgresql',
-#             'NAME': 'trading',  # replace with your database name
-#             'USER': 'postgres',  # replace with your database username
-#             'PASSWORD': '12345',  # replace with your database password
-#             'HOST': '10.8.0.2',
-#             'PORT': '32',
-#         }
-# }
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,

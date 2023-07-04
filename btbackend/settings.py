@@ -14,6 +14,7 @@ from pathlib import Path
 import environ
 import os
 import json
+# from sshtunnel import SSHTunnelForwarder
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +29,8 @@ env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
+# DEBUG = env('DEBUG')
+DEBUG = False
 
 # Raises Django's ImproperlyConfigured
 # exception if SECRET_KEY not in os.environ
@@ -94,6 +96,15 @@ WSGI_APPLICATION = 'btbackend.wsgi.application'
 
 # # Connect to a server using the ssh keys. See the sshtunnel documentation for using password authentication
 
+# ssh_tunnel = SSHTunnelForwarder(
+#     env('IP_TUNNEL'),
+#     ssh_username=env("SSH_USER"),
+#     ssh_password=env("SSH_PASS"),
+#     ssh_port=env("SSH_PORT"),
+#     remote_bind_address=(env("DB_BT_HOST"), env("DB_BT_PORT"))
+# )
+# ssh_tunnel.start()
+
 DATABASES = {
     'default': {
         'ENGINE': "django.db.backends.postgresql",
@@ -101,7 +112,9 @@ DATABASES = {
         'USER': env("DB_BT_USER"),
         'PASSWORD': env("DB_BT_PWD"),
         'HOST': env("DB_BT_HOST"),
+        # 'PORT': ssh_tunnel.local_bind_port,
         'PORT': env("DB_BT_PORT"),
+        'CONN_MAX_AGE': 35,
     }
 }
 

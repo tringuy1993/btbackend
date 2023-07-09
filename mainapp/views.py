@@ -1,16 +1,18 @@
 
 
 # Create your views here.
-from .models import NotionalGreeks, ZDTEDates, PartitionedTable
+from .models import ZDTEDates
 from .serializers import ZDTEDateSerializer
 
-from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .data_access.total_gex import get_notional_greeks_0dte, get_all_partioned_tables, get_theo_gamma, get_option_chain
 from .data_access.utilities import generate_table_names
+from .data_access.queryOrder import queryOrder
 from rest_framework.decorators import permission_classes
 from .authentication import IsAuthenticatedWithFirebase
+import json
+
 
 
 class hello(APIView):
@@ -46,14 +48,13 @@ class my_view(APIView):
 
         result = get_notional_greeks_0dte(tables=table_list,
                                           trade_date=trade_date,
-                                          #   end_date = end_date,
                                           expiration=expiration,
                                           trade_time=trade_time,
                                           greek=greek,
                                           all_greeks=all_greeks,)
         result2 = get_theo_gamma(
             trade_date=trade_date, expiration=expiration, trade_time=trade_time)
-        # print(result2)
+
         return Response({"greek_exposure": result, "greek_theo": result2})
 
 
@@ -64,8 +65,24 @@ class option_chain(APIView):
         expiration = request.query_params.get("expiration").replace('-', '')
         trade_time = request.query_params.get("trade_time")
         table = 'spxw_data_p' + trade_date
-
         result = get_option_chain(
             table=table, expiration=expiration, trade_time=trade_time)
 
         return Response({'data': result})
+
+@permission_classes([IsAuthenticatedWithFirebase])
+class track_order(APIView):
+    def get(self, request, *args, **kwargs):
+        trade_date = request.query_params.get("trade_date").replace('-', '')
+        expiration = request.query_params.get("expiration").replace('-', '')
+        trade_time = request.query_params.get("trade_time")
+        quote_datetime = trade_date + " " + trade_time
+        # print(quote_datetime)
+        option_legs = json.loads(request.query_params.get("option_legs"))
+        table = 'spxw_data_p' + trade_date
+        # print(f'trade_date {trade_date}, trade_time {trade_time}, expiration {expiration}')
+        # print('optionlegs:', option_legs)
+        results = queryOrder(table=table, expiration=expiration,
+                             quote_datetime=quote_datetime, option_legs=option_legs)
+        
+        return Response({'data': results})
